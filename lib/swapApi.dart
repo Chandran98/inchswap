@@ -6,9 +6,9 @@ import 'package:http/http.dart';
 import 'package:web3dart/web3dart.dart';
 
 class SwapApi {
-  static const chainId = 56; // Chain ID for Binance Smart Chain (BSC)
-  static const web3RpcUrl =
-      "https://bsc-dataseed.binance.org"; // URL for BSC node
+  static const chainId = 137; // Chain ID for Binance Smart Chain (BSC)
+  static const web3RpcUrl = "https://polygon-rpc.com/";
+  // "https://bsc-dataseed.binance.org"; // URL for BSC node
 
   // final String _endPoint = 'https://api.1inch.io/v4.0/';
 
@@ -16,35 +16,45 @@ class SwapApi {
 
   final Map<String, String> _headers = {
     "Authorization": "Bearer 2EQIam7nYCvCeAUIDYKD7G8qELgkmngn",
-    "accept": "application/json"
+    "content-type": "application/json"
   };
+  // var pvtKey="5fbf0c975bae4025b5956aaa612e8047b7d959c84c46d81e0fc647442f47cf47";
+  var credentials =
+      EthPrivateKey.fromHex("0x7a66CDc2AfaB3540847048Eb7d4CfbDBCe05659e");
 
-  Future<Map<String, dynamic>> swap(
-      // {
-      // required appUser,
-      // required fromWallet,
-      // required walletNetwork,
-      // required startToken,
-      // required endToken,
-      // required double quantity,
-      // }
-      ) async {
+  swap() async {
+       Uint8List hexToBytes(String hexString) {
+  hexString = hexString.substring(2);
+  var bytes = <int>[];
+  for (var i = 0; i < hexString.length; i += 2) {
+    var hexChar = hexString.substring(i, i + 2);
+    var byte = int.parse(hexChar, radix: 16);
+    bytes.add(byte);
+  }
+  return Uint8List.fromList(bytes);
+}
+    double quantity = 1;
+
+    print("obdaadaject${(quantity * pow(10, 18)).toInt().toString()}");
     Map<String, dynamic> result = {};
     final queryParameters = {
-      'src': "0x111111111117dc0aa78b770fa6a738034120c302",
-      'dst': "0x1af3f329e8be154074d8769d1ffa4ee058b1dbc3",
-      'amount': "100000000000000000",
-      'from': "0xBa7E6a23a824B958592dcdaFD54400fEFA19e5D4",
+      'src': "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
+      'dst': "0xBbba073C31bF03b8ACf7c28EF0738DeCF3695683",
+      'amount': (quantity * pow(10, 18)).toInt().toString(),
+      'from': "0xF567C0CE34F85D3a3aFb0a4d47C5a350448a151F",
       'slippage': '1',
       'includeTokensInfo': 'true',
       'disableEstimate': 'true',
     };
+    print("object $result ");
 
-    Uri uri = Uri.parse('$_endPoint${chainId}/swap')
+    Uri uri = Uri.parse('$_endPoint$chainId/swap')
         .replace(queryParameters: queryParameters);
 
+    print("urri####$uri");
+
     try {
-      print(queryParameters);
+      print("queryParameters#$queryParameters");
       http.Response response = await http.get(uri, headers: _headers);
 
       print("response123${response.statusCode}");
@@ -53,20 +63,31 @@ class SwapApi {
       if (response.statusCode == 200) {
         dynamic jsonTx = json.decode(response.body)['tx'];
         print("jsonTx $jsonTx");
-        // String transaction = await signAndSendTransaction(
-        //   appUser: appUser,
-        //   senderLocalWallet: fromWallet,
-        transaction:
-        Transaction(
+
+        Web3Client web3client = Web3Client(web3RpcUrl, Client());
+
+        final gasPrice = await web3client.getGasPrice();
+        var transaction = Transaction(
           from: EthereumAddress.fromHex(jsonTx['from']),
           to: EthereumAddress.fromHex(jsonTx['to']),
           value: EtherAmount.fromUnitAndValue(
               EtherUnit.wei, int.parse(jsonTx['value'])),
-          data: Uint8List.fromList(utf8.encode(jsonTx['data'])),
-          gasPrice: EtherAmount.fromUnitAndValue(
-              EtherUnit.wei, int.parse(jsonTx['gasPrice'])),
+          data: hexToBytes(jsonTx['data']),
+          // gasPrice: EtherAmount.fromUnitAndValue(
+          //     EtherUnit.wei, int.parse(jsonTx['gasPrice'])),
+          gasPrice: gasPrice,
           maxGas: 100000,
         );
+        print("transactionobject$transaction $gasPrice");
+
+        try {
+          final dataKey = await web3client
+              .sendTransaction(credentials, transaction, chainId: chainId);
+
+          print("dataKey$dataKey");
+        } catch (e) {
+          print("Error msg $e");
+        }
         // );
         // await broadCastRawTransaction(transaction, walletNetwork);
         // result.addAll({'transaction': transaction});
@@ -83,26 +104,7 @@ class SwapApi {
     return result;
   }
 
-  // Future<String> signAndSendTransaction({
-  //   required AppUser appUser,
-  //   required LocalWallet senderLocalWallet,
-  //   required Transaction transaction,
-  // }) async {
-  //   WalletNetwork network = getWalletNetworkFromName(appUser, senderLocalWallet.network);
-  //   Web3Client web3client = Web3Client('${network.rpc}$ankr', Client());
-  //   EthPrivateKey credentials = EthPrivateKey.fromHex(senderLocalWallet.privateKey);
 
-  //   String response;
-  //   try {
-  //     response = await web3client.sendTransaction(credentials, transaction, chainId: network.chainID);
-  //   } catch (e) {
-  //     response = e.toString();
-  //   }
-
-  //   web3client.dispose();
-  //   debugPrint('SignAndSendTransactionResponse: $response');
-  //   return response;
-  // }
 
   // Future<void> broadCastRawTransaction(String rawTransaction, WalletNetwork walletNetwork) async {
   //   http.Response response = await http.post(
