@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:swap/swap.dart';
-import 'package:swap/swapProvider.dart';
+import 'package:swap/pages/splashScreen.dart';
+import 'package:swap/pages/swap.dart';
+import 'package:swap/provider/swapProvider.dart';
 
 void main() {
   runApp(MultiProvider(
@@ -20,11 +21,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
+  
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home:  SwapScreen(),
+      home:  SplashScreen(),
     );
   }
 }
